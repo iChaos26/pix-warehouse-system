@@ -1,0 +1,14 @@
+version: '3.9'
+
+services:
+  app:
+    image: python:3.10.0
+    container_name: app-container
+    working_dir: /app
+    volumes:
+      - .:/app
+    command: >
+      sh -c "poetry install && poetry shell"
+    environment:
+      - PYTHONUNBUFFERED=1
+    tty: true

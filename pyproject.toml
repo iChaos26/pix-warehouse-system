@@ -1,0 +1,37 @@
+[tool.poetry]
+name = "nubank-test"
+version = "0.1.0"
+packages = [
+    { include = "app" }
+]
+description = "nubank analysis project"
+authors = ["joao-gabriel"]
+readme = "README.md"
+
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+duckdb = "^0.8.1"
+faker = "^19.2.0"
+pytest = "^7.4.0"
+
+[tool.poetry.dev-dependencies]
+pytest = "^7.4.0"
+black = "^23.9.0"
+flake8 = "^6.1.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q"
+testpaths = [
+    "app/tests"
+]
+pythonpath = [
+    "app"
+]
+
