@@ -1,6 +1,13 @@
 class DatabaseSchema:
+    """
+    Handles the creation of database schemas for old and new systems.
+    """
+
     @staticmethod
-    def create_schema(connection):
+    def create_old_schema(connection):
+        """
+        Creates the old schema, which includes dimension tables and transaction-specific tables.
+        """
         queries = [
             """
             CREATE TABLE d_week (
@@ -36,6 +43,70 @@ class DatabaseSchema:
                 weekday_id INT REFERENCES d_weekday(weekday_id)
             );
             """,
+            """
+            CREATE TABLE transfer_ins (
+                id UUID PRIMARY KEY,
+                account_id UUID REFERENCES accounts(account_id),
+                amount FLOAT,
+                transaction_requested_at INT REFERENCES d_time(time_id),
+                transaction_completed_at INT REFERENCES d_time(time_id),
+                status VARCHAR(128)
+            );
+            """,
+            """
+            CREATE TABLE transfer_outs (
+                id UUID PRIMARY KEY,
+                account_id UUID REFERENCES accounts(account_id),
+                amount FLOAT,
+                transaction_requested_at INT REFERENCES d_time(time_id),
+                transaction_completed_at INT REFERENCES d_time(time_id),
+                status VARCHAR(128)
+            );
+            """,
+            """
+            CREATE TABLE pix_movements (
+                id UUID PRIMARY KEY,
+                account_id UUID REFERENCES accounts(account_id),
+                in_or_out VARCHAR(128),
+                pix_amount FLOAT,
+                pix_requested_at INT REFERENCES d_time(time_id),
+                pix_completed_at INT REFERENCES d_time(time_id),
+                status VARCHAR(128)
+            );
+            """
+        ]
+
+        for query in queries:
+            connection.execute(query)
+
+    @staticmethod
+    def create_new_schema(connection):
+        """
+        Creates the new schema, which consolidates transaction tables into a unified 'transactions' table.
+        """
+        queries = [
+            """
+            CREATE TABLE transactions (
+                transaction_id UUID PRIMARY KEY,
+                account_id UUID REFERENCES accounts(account_id),
+                amount FLOAT,
+                transaction_type VARCHAR(128),
+                requested_at TIMESTAMP,
+                completed_at TIMESTAMP,
+                status VARCHAR(128)
+            );
+            """
+        ]
+
+        for query in queries:
+            connection.execute(query)
+
+    @staticmethod
+    def create_core_schema(connection):
+        """
+        Creates core tables that are shared between old and new schemas.
+        """
+        queries = [
             """
             CREATE TABLE country (
                 country_id UUID PRIMARY KEY,
@@ -76,39 +147,17 @@ class DatabaseSchema:
                 account_check_digit VARCHAR(128),
                 account_number VARCHAR(128)
             );
-            """,
-            """
-            CREATE TABLE transfer_ins (
-                id UUID PRIMARY KEY,
-                account_id UUID REFERENCES accounts(account_id),
-                amount FLOAT,
-                transaction_requested_at INT,
-                transaction_completed_at INT,
-                status VARCHAR(128)
-            );
-            """,
-            """
-            CREATE TABLE transfer_outs (
-                id UUID PRIMARY KEY,
-                account_id UUID REFERENCES accounts(account_id),
-                amount FLOAT,
-                transaction_requested_at INT,
-                transaction_completed_at INT,
-                status VARCHAR(128)
-            );
-            """,
-            """
-            CREATE TABLE pix_movements (
-                id UUID PRIMARY KEY,
-                account_id UUID REFERENCES accounts(account_id),
-                in_or_out VARCHAR(128),
-                pix_amount FLOAT,
-                pix_requested_at INT,
-                pix_completed_at INT,
-                status VARCHAR(128)
-            );
             """
         ]
 
         for query in queries:
             connection.execute(query)
+
+    @staticmethod
+    def create_schema(connection):
+        """
+        Creates the entire schema, combining old, new, and core tables.
+        """
+        DatabaseSchema.create_core_schema(connection)
+        DatabaseSchema.create_old_schema(connection)
+        DatabaseSchema.create_new_schema(connection)
