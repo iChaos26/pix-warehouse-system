@@ -33,14 +33,14 @@ class MaterializedViews:
         connection.execute(query)
 
 
-if __name__ == "__main__":
-    db_connection = DuckDBConnection()
-    connection = db_connection.connect()
+# if __name__ == "__main__":
+#     db_connection = DuckDBConnection()
+#     connection = db_connection.connect()
 
-    try:
-        print("Creating materialized views...")
-        MaterializedViews.create_monthly_account_balances(connection)
-        MaterializedViews.create_daily_transactions_report(connection)
-        print("Materialized views created successfully!")
-    finally:
-        db_connection.close()
+#     try:
+#         print("Creating materialized views...")
+#         MaterializedViews.create_monthly_account_balances(connection)
+#         MaterializedViews.create_daily_transactions_report(connection)
+#         print("Materialized views created successfully!")
+#     finally:
+#         db_connection.close()

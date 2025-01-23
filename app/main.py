@@ -34,8 +34,9 @@ class DataManager:
                     print(f"Loading data from {csv_file_path} into {table_name}...")
 
                     # Create table and load data
-                    self.connection.execute(
-                        f"CREATE TABLE IF NOT EXISTS {table_name} AS SELECT * FROM read_csv_auto('{csv_file_path}');"
+                    print(csv_file_path)
+                    self.connection.sql(
+                        f"CREATE TABLE {table_name} AS SELECT * FROM read_csv('{csv_file_path}', AUTO_DETECT=TRUE)"
                     )
                     print(f"Data from {csv_file_path} loaded successfully into {table_name}.")
 
@@ -93,11 +94,11 @@ def main():
 
         # Step 1: Apply the old schema
         print("Applying old and core schema...")
-        DatabaseSchema.create_core_schema(connection)
-        DatabaseSchema.create_old_schema(connection)
+        #DatabaseSchema.create_core_schema(connection)
+        #DatabaseSchema.create_old_schema(connection)
         #Step 2: Apply the new schema
         print("Applying new schema...")
-        DatabaseSchema.create_new_schema(connection)
+        #DatabaseSchema.create_new_schema(connection)
 
 
         # Step 3: Load data into the old schema
@@ -106,7 +107,8 @@ def main():
         manager = DataManager(connection)
         manager.load_csv_data()
         manager.verify_data_in_tables(connection)
-        #print("Testing PixMovementDTO query...")
+        #connection.table("pix_movements").show()
+        print("Testing PixMovementDTO and CountryDTO query builder...")
         #manager.test_queries()
         # Step 4: Transform old schema to new schema
         # print("Starting data transformation...")
@@ -126,3 +128,8 @@ def main():
 
 if __name__ == "__main__":
     main()
+#OUTPUT
+# Verifying data in table: pix_movements
+# Sample data in pix_movements: [(3101512580483427328, 127700825787235152, 1.56, 1587921566, 'None', 'failed', 'pix_in'), (2678169777048716288, 2074575830148960256, 197.16, 1593136303, '1593136311', 'completed', 'pix_in'), (869785443623607552, 2388678818356235264, 422.19, 1596889520, '1596889526', 'completed', 'pix_in'), (727767235192291200, 1152700769026362752, 465.36, 1603372554, '1603372558', 'completed', 'pix_out'), (1492667345435250944, 1431539955275996672, 1515.34, 1597414796, 'None', 'failed', 'pix_in')]
+# Verifying data in table: country
+# Sample data in country: [('Brasil', 1811589392032273152)]

@@ -38,14 +38,14 @@ class TransactionsViews:
         connection.execute(query)
 
 
-if __name__ == "__main__":
-    db_connection = DuckDBConnection()
-    connection = db_connection.connect()
+# if __name__ == "__main__":
+#     db_connection = DuckDBConnection()
+#     connection = db_connection.connect()
 
-    try:
-        print("Creating transaction views...")
-        TransactionsViews.create_customer_financial_overview(connection)
-        TransactionsViews.create_top_performing_accounts(connection)
-        print("Transaction views created successfully!")
-    finally:
-        db_connection.close()
+#     try:
+#         print("Creating transaction views...")
+#         TransactionsViews.create_customer_financial_overview(connection)
+#         TransactionsViews.create_top_performing_accounts(connection)
+#         print("Transaction views created successfully!")
+#     finally:
+#         db_connection.close()
