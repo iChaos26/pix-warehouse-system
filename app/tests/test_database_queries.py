@@ -1,6 +1,5 @@
 import pytest
 from app.database.connection import DuckDBConnection
-from app.database.schema import DatabaseSchema
 from app.database.queries import Queries
 from app.database.update_dtos import PixMovementDTO, CountryDTO
 

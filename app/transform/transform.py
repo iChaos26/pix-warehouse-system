@@ -1,103 +1,151 @@
-from app.database.update_dtos import TransactionDTO, TransferInDTO, TransferOutDTO, PixMovementDTO
-from app.database.queries import Queries
-
+from app.database.queries import QueryBuilder
+from app.database.update_dtos import (
+    TransactionDTO,
+    TransferInDTO,
+    TransferOutDTO,
+    PixMovementDTO
+)
 
 class DataTransformer:
-    """
-    Handles the transformation of data from the old schema to the new schema using DTOs and Queries.
-    """
-
     @staticmethod
     def transform_transactions(connection):
-        """
-        Transforms transaction-specific tables (transfer_ins, transfer_outs, pix_movements)
-        into the unified 'transactions' table using DTOs and Queries.
-        """
-        print("Transforming old schema data into unified 'transactions' table...")
-
-        # Use DTO for 'transactions'
-        transactions_dto = TransactionDTO()
-
-        # Transform and migrate 'transfer_ins'
-        DataTransformer._migrate_table(
-            connection,
-            source_dto=TransferInDTO(),
-            target_dto=transactions_dto,
-            transformation=lambda row: (
-                row["id"],
-                row["account_id"],
-                row["amount"],
-                "transfer_in",
-                row["transaction_requested_at"],
-                row["transaction_completed_at"],
-                row["status"],
-            ),
-        )
-        print("Data from 'transfer_ins' migrated to 'transactions'.")
-
-        # Transform and migrate 'transfer_outs'
-        DataTransformer._migrate_table(
-            connection,
-            source_dto=TransferOutDTO(),
-            target_dto=transactions_dto,
-            transformation=lambda row: (
-                row["id"],
-                row["account_id"],
-                row["amount"],
-                "transfer_out",
-                row["transaction_requested_at"],
-                row["transaction_completed_at"],
-                row["status"],
-            ),
-        )
-        print("Data from 'transfer_outs' migrated to 'transactions'.")
-
-        # Transform and migrate 'pix_movements'
-        DataTransformer._migrate_table(
-            connection,
-            source_dto=PixMovementDTO(),
-            target_dto=transactions_dto,
-            transformation=lambda row: (
-                row["id"],
-                row["account_id"],
-                row["pix_amount"],
-                "pix_in" if row["in_or_out"] == "in" else "pix_out",
-                row["pix_requested_at"],
-                row["pix_completed_at"],
-                row["status"],
-            ),
-        )
-        print("Data from 'pix_movements' migrated to 'transactions'.")
-
-        # Optionally, drop old tables after migration
-        DataTransformer._drop_old_tables(connection)
-        print("Old schema tables dropped after migration.")
+        """Robust transformation handling real-world data issues"""
+        print("Starting schema transformation...")
+        
+        try:
+            # 1. Create transactions table with proper schema
+            DataTransformer._create_transactions_table(connection)
+            
+            # 2. Migrate data with explicit cleaning
+            DataTransformer._migrate_legacy_data(connection)
+            
+            # 3. Validate essential relationships
+            DataTransformer._validate_core_data(connection)
+            
+            # 4. Cleanup legacy tables
+            DataTransformer._cleanup_legacy_tables(connection)
+            
+            print("\n✓ Transformation completed successfully")
+            
+        except Exception as e:
+            print(f"\n!!! Transformation failed: {str(e)}")
+            raise
 
     @staticmethod
-    def _migrate_table(connection, source_dto, target_dto, transformation):
-        """
-        Handles the migration of data from a source table to a target table.
-
-        Args:
-            connection: The database connection.
-            source_dto: The DTO for the source table.
-            target_dto: The DTO for the target table.
-            transformation: A lambda function to map source rows to target rows.
-        """
-        # Fetch all records from the source table
-        query = Queries.fetch_all_records(source_dto)
-        data = connection.execute(query).fetchall()
-
-        # Insert transformed data into the target table
-        insert_query = Queries.insert_record(target_dto)
-        for row in data:
-            connection.execute(insert_query, transformation(row))
+    def _create_transactions_table(connection):
+        """Create target table with proper data types"""
+        print("Creating transactions table...")
+        connection.execute("""
+            CREATE TABLE IF NOT EXISTS transactions (
+                transaction_id VARCHAR PRIMARY KEY,
+                account_id VARCHAR,
+                amount FLOAT,
+                transaction_type VARCHAR,
+                requested_at TIMESTAMP,
+                completed_at TIMESTAMP,
+                status VARCHAR
+            )
+        """)
+        print("✓ Created transactions table")
 
     @staticmethod
-    def _drop_old_tables(connection):
-        """
-        Drops old transaction-specific tables after data migration.
-        """
-        tables_to_drop = ["transfer_ins", "transfer_outs", "pix_movements"]
-        for table in tables_to_drop:
-            connection.execute(f"DROP TABLE IF EXISTS {table};")
+    def _migrate_legacy_data(connection):
+        """Data migration with explicit type handling"""
+        print("\nMigrating legacy data:")
+        
+        migrations = [
+            {
+                "source": TransferInDTO().table_name,
+                "type": "transfer_in",
+                "amount": "amount",
+                "timestamp": "transaction"
+            },
+            {
+                "source": TransferOutDTO().table_name,
+                "type": "transfer_out",
+                "amount": "amount",
+                "timestamp": "transaction"
+            },
+            {
+                "source": PixMovementDTO().table_name,
+                "type": "pix",
+                "amount": "pix_amount",
+                "timestamp": "pix"
+            }
+        ]
+
+        for migration in migrations:
+            print(f"- Processing {migration['source']}...")
+            connection.execute(f"""
+                INSERT INTO transactions
+                SELECT
+                    uuid() AS transaction_id,
+                    account_id::VARCHAR,
+                    {migration['amount']}::FLOAT,
+                    '{migration['type']}' AS transaction_type,
+                    (
+                        SELECT action_timestamp 
+                        FROM d_time 
+                        WHERE time_id = TRY_CAST(
+                            NULLIF({migration['timestamp']}_requested_at::VARCHAR, 'None') AS INTEGER
+                        )
+                    ),
+                    (
+                        SELECT action_timestamp 
+                        FROM d_time 
+                        WHERE time_id = TRY_CAST(
+                            NULLIF({migration['timestamp']}_completed_at::VARCHAR, 'None') AS INTEGER
+                        )
+                    ),
+                    NULLIF(status::VARCHAR, 'None')
+                FROM {migration['source']}
+                WHERE 
+                    TRY_CAST(NULLIF({migration['timestamp']}_requested_at::VARCHAR, 'None') AS INTEGER) IS NOT NULL
+                    AND TRY_CAST(NULLIF({migration['timestamp']}_completed_at::VARCHAR, 'None') AS INTEGER) IS NOT NULL
+                    AND {migration['amount']}::FLOAT IS NOT NULL
+            """)
+            print(f"✓ Migrated {migration['source']}")
+
+    @staticmethod
+    def _validate_core_data(connection):
+        """Essential data quality checks"""
+        print("\nValidating core data:")
+        
+        # Check for invalid timestamps
+        invalid_timestamps = connection.execute("""
+            SELECT COUNT(*) FROM transactions
+            WHERE requested_at IS NULL OR completed_at IS NULL
+        """).fetchone()[0]
+        print(f"Invalid timestamps: {invalid_timestamps} (allowed)")
+        
+        # Check account references
+        orphaned_transactions = connection.execute("""
+            SELECT COUNT(*) FROM transactions
+            WHERE account_id NOT IN (SELECT account_id FROM accounts)
+        """).fetchone()[0]
+        if orphaned_transactions > 0:
+            raise ValueError(f"Found {orphaned_transactions} orphaned transactions")
+        
+        print("✓ All core data valid")
+
+    @staticmethod
+    def _cleanup_legacy_tables(connection):
+        """Safe table removal with existence checks"""
+        print("\nCleaning up legacy tables:")
+        for table in [TransferInDTO().table_name, 
+                     TransferOutDTO().table_name,
+                     PixMovementDTO().table_name]:
+            if DataTransformer._table_exists(connection, table):
+                connection.execute(f"DROP TABLE {table}")
+                print(f"✓ Removed {table}")
+            else:
+                print(f"ⓘ {table} not found")
+
+    @staticmethod
+    def _table_exists(connection, table_name: str) -> bool:
+        """DuckDB-compatible table existence check"""
+        return connection.execute(f"""
+            SELECT 1 
+            FROM duckdb_tables() 
+            WHERE table_name = '{table_name}'
+        """).fetchone() is not None
