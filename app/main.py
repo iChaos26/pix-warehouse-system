@@ -7,7 +7,7 @@ from app.database.update_dtos import PixMovementDTO, CountryDTO, CustomerDTO, Ac
 from app.views.materialized_views import MaterializedViews
 from app.views.transactions_views import TransactionsViews
 
-
+#!TO DO: REFACTOR DATAMANAGER AND DATA TESTS
 class DataManager:
     """
     Manages the entire data lifecycle: schema creation, data loading,
