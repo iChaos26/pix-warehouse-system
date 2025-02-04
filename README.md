@@ -54,13 +54,20 @@ This solution analyzes and optimizes the financial data model for a large datase
 │   └── pix_movements        # PIX-specific transactions
 ├── database
 │   ├── connection.py        # Database connection management
-│   ├── schema.py            # Database schema definitions
-│   ├── dtos.py              # DTO-based validation
+│   ├── update_dtos.py       # DTO-based validation
 │   └── queries.py           # Query builder
+├── mock
+│   ├── mock.py
+│   ├── mock_streamlit.py    
 ├── transform                # Data transformation logic
+│   └── transform.py
 ├── views                    # Materialized views and analytics
+    ├── dtos.py
+    ├── materialized_views.py
+    └── transactions_views.py
 ├── main.py                  # Application entry point
 ├── tests                    # Unit tests
+│   └── test_database_queries.py
 ├── poetry.lock              # Dependency lock file
 ├── pyproject.toml           # Project configuration
 └── docker-compose.yml       # Docker configuration
@@ -97,53 +104,15 @@ Ensure you have the following installed:
 | Customer Overview Query | 1.8 seconds   | 0.2 seconds   | 9x faster   |   |
 | Data Ingestion Time     | 12 seconds    | 4 seconds     | 3x faster   |   |
 
+
+
 ## Update Schema
-
+![alt text](<Screenshot from 2025-02-04 20-08-57.png>)
 ---
-title: Transactions
+title: Pix transactions and Account Balance
 
+![alt text](<Screenshot 2025-02-04 at 20-48-41 Editor Mermaid Chart.png>)
 ---
-erDiagram
-   TRANSACTIONS ||--o{ ACCOUNTS : belongs_to
-   TRANSACTIONS {
-        UUID transaction_id PK
-        UUID account_id FK
-        DECIMAL(15,2) amount
-        ENUM('deposit', 'withdrawal') type
-        TIMESTAMP created_at
-        ENUM('pending', 'completed', 'failed') status
-    }
-    ACCOUNTS ||--|| CUSTOMERS : owned_by
-    ACCOUNTS {
-        UUID account_id PK
-        UUID customer_id FK
-        TIMESTAMP opened_at
-        ENUM('active', 'closed') status
-    }
-    CUSTOMERS ||--|| CITIES : located_in
-    CUSTOMERS {
-        UUID customer_id PK
-        VARCHAR(128) first_name
-        VARCHAR(128) last_name
-        UUID city_id FK
-    }
-    CITIES ||--|| STATES : within
-    CITIES {
-        UUID city_id PK
-        VARCHAR(255) name
-        UUID state_id FK
-    }
-    STATES ||--|| COUNTRIES : part_of
-    STATES {
-        UUID state_id PK
-        VARCHAR(255) name
-        UUID country_id FK
-    }
-    COUNTRIES {
-        UUID country_id PK
-        VARCHAR(255) name
-        VARCHAR(2) iso_code
-    }
 
 ## Materialized Views
 
@@ -542,4 +511,3 @@ SELECT SUM(amount) AS total_amount FROM transactions;
 - Plan for iterative development and regular releases.
 - Scale the system based on user demand and performance metrics.
 - Explore additional features like data visualization, advanced analytics, and machine learning integration.
-

@@ -1,0 +1,104 @@
+erDiagram
+    ACCOUNTS {
+        BIGINT account_id PK
+        BIGINT customer_id FK
+        TIMESTAMP created_at
+        VARCHAR status
+        BIGINT account_branch
+        BIGINT account_check_digit
+        BIGINT account_number
+    }
+    CUSTOMERS {
+        BIGINT customer_id PK
+        VARCHAR first_name
+        VARCHAR last_name
+        BIGINT customer_city FK
+        BIGINT cpf
+        VARCHAR country_name FK
+    }
+    CUSTOMER_FINANCIAL {
+        BIGINT customer_id PK, FK
+        VARCHAR first_name
+        VARCHAR last_name
+        DOUBLE total_transfer_in
+        DOUBLE total_transfer_out
+        DOUBLE total_pix_in
+        DOUBLE total_pix_out
+    }
+    TRANSACTIONS {
+        VARCHAR transaction_id PK
+        VARCHAR account_id FK
+        FLOAT amount
+        VARCHAR transaction_type
+        TIMESTAMP requested_at
+        TIMESTAMP completed_at
+        VARCHAR status
+    }
+    CITY {
+        BIGINT city_id PK
+        VARCHAR city
+        BIGINT state_id FK
+    }
+    STATE {
+        BIGINT state_id PK
+        VARCHAR state
+        BIGINT country_id FK
+    }
+    COUNTRY {
+        BIGINT country_id PK
+        VARCHAR country
+    }
+    MONTHLY_ACCOUNT_BALANCE {
+        VARCHAR account_id PK, FK
+        DATE month
+        DOUBLE account_balance
+    }
+    DAILY_TRANSACTIONS {
+        DATE transaction_date PK
+        DOUBLE total_transfer_in
+        DOUBLE total_transfer_out
+        DOUBLE total_pix_in
+        DOUBLE total_pix_out
+    }
+    TOP_PERFORMING_ACCOUNTS {
+        BIGINT account_id PK, FK
+        DOUBLE total_incoming
+        BIGINT performance_rank
+    }
+    D_TIME {
+        BIGINT time_id PK
+        TIMESTAMP action_timestamp
+        BIGINT week_id FK
+        BIGINT month_id FK
+        BIGINT year_id FK
+        BIGINT weekday_id FK
+    }
+    D_WEEK {
+        BIGINT week_id PK
+        BIGINT action_week
+    }
+    D_MONTH {
+        BIGINT month_id PK
+        BIGINT action_month
+    }
+    D_YEAR {
+        BIGINT year_id PK
+        BIGINT action_year
+    }
+    D_WEEKDAY {
+        BIGINT weekday_id PK
+        BIGINT action_weekday
+    }
+    CUSTOMERS ||--o{ ACCOUNTS : "possui"
+    CUSTOMERS ||--o{ CUSTOMER_FINANCIAL : "tem"
+    ACCOUNTS ||--o{ TRANSACTIONS : "realiza"
+    CUSTOMERS }|..|{ CITY : "reside em"
+    CITY ||--o{ STATE : "pertence a"
+    STATE ||--o{ COUNTRY : "está em"
+    ACCOUNTS ||--o{ MONTHLY_ACCOUNT_BALANCE : "possui saldo"
+    TRANSACTIONS ||--o{ D_TIME : "ocorre em"
+    D_TIME ||--o{ D_WEEK : "está na semana"
+    D_TIME ||--o{ D_MONTH : "está no mês"
+    D_TIME ||--o{ D_YEAR : "está no ano"
+    D_TIME ||--o{ D_WEEKDAY : "ocorre no dia da semana"
+    ACCOUNTS ||--o{ TOP_PERFORMING_ACCOUNTS : "está entre os melhores"

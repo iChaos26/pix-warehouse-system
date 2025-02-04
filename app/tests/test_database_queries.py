@@ -1,7 +1,7 @@
 import pytest
 from app.database.connection import DuckDBConnection
-from app.database.queries import Queries
-from app.database.update_dtos import PixMovementDTO, CountryDTO
+from app.database.queries import QueryBuilder
+from app.database.update_dtos import PixMovementDTO, CountryDTO, TransactionDTO
 
 @pytest.fixture(scope="module")
 def db_connection():

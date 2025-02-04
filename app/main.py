@@ -1,4 +1,5 @@
 import os
+import numpy
 from prettytable import PrettyTable
 from app.database.connection import DuckDBConnection
 from app.transform.transform import DataTransformer
@@ -327,7 +328,11 @@ def main():
 
         print("\n=== TRANSACTION ANALYSIS ===")
         manager.analyze_transactions(customer_ids)
-        
+
+        print("\n=== TABLE DISPLAY ===")
+        #print(db.connect().sql("SHOW ALL TABLES").df())
+        schema_arr = db.connect().sql("SHOW ALL TABLES").show()
+        print(schema_arr)
         print("\n=== PIPELINE COMPLETE ===")
 
     except Exception as e:
