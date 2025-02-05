@@ -1,7 +1,5 @@
 # Nubank Data Analysis Solution
 
-![Enhanced Schema Diagram](https://via.placeholder.com/800x400.png?text=Optimized+Transaction+Schema)
-
 This project is an end-to-end solution for financial data analysis featuring schema optimizations, robust validation, and precomputed analytics for a large-scale banking dataset.
 
 ---
@@ -104,15 +102,14 @@ Ensure you have the following installed:
 | Customer Overview Query | 1.8 seconds   | 0.2 seconds   | 9x faster   |   |
 | Data Ingestion Time     | 12 seconds    | 4 seconds     | 3x faster   |   |
 
-
-
 ## Update Schema
-![alt text](<Screenshot from 2025-02-04 20-08-57.png>)
+
 ---
 title: Pix transactions and Account Balance
 
-![alt text](<Screenshot 2025-02-04 at 20-48-41 Editor Mermaid Chart.png>)
 ---
+![alt text](<Screenshot 2025-02-04 at 20-48-41 Editor Mermaid Chart.png>)
+![alt text](<Screenshot from 2025-02-04 20-08-57.png>)
 
 ## Materialized Views
 
@@ -511,3 +508,32 @@ SELECT SUM(amount) AS total_amount FROM transactions;
 - Plan for iterative development and regular releases.
 - Scale the system based on user demand and performance metrics.
 - Explore additional features like data visualization, advanced analytics, and machine learning integration.
+
+## **Enhancing the Entity-Relationship Model for Multi-Country Financial Products**
+
+Our current database model assumes that a customer is linked to a single country through the `CUSTOMERS` table. However, to support multiple financial products (e.g., life insurance, loans) across different countries, we need to modify the schema, creating additional dimensions like `CUSTOMER_COUNTRY` and `CUSTOMER_COUNTRY`.  
+
+## **Why Do We Need Changes?**  
+
+### **1. Customers May Have Financial Products in Multiple Countries**  
+
+- Currently, the `CUSTOMERS` table has a direct `country_name` attribute, limiting a customer to a single country.  
+- We need to allow customers to have accounts, loans, and insurance in multiple countries.  
+
+#### **Solution: Introduce `CUSTOMER_COUNTRY` Table**  
+
+- This table establishes a many-to-many relationship between customers and countries.  
+- It includes a `product_type` column to specify which financial product is associated with a country.  
+
+![alt text](<Screenshot from 2025-02-05 10-49-48.png>)
+
+### **2. Financial Products May Be Available in Multiple Countries**
+
+- Accounts, transactions, loans, and insurance policies might be available in different countries.
+- Currently, our model does not support this flexibility.
+
+#### **Solution: Introduce `PRODUCT_COUNTRY` Table**
+
+- This table links financial products (e.g., accounts, transactions) to countries where they are available.
+
+![alt text](<Screenshot from 2025-02-05 10-59-59.png>)
